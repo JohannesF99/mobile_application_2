@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_application_2/screen/history.dart';
+import 'package:mobile_application_2/screen/history_screen.dart';
 
-import 'tasklist.dart';
+import 'tasklist_screen.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
