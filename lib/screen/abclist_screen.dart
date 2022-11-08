@@ -1,29 +1,30 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:mobile_application_2/utils/store_utils.dart';
 
-class TaskListScreen extends StatefulWidget{
-  const TaskListScreen({Key? key, this.existingList}): super(key: key);
+class AbcListScreen extends StatefulWidget{
+  const AbcListScreen({Key? key, this.existingList}): super(key: key);
 
   final File? existingList;
 
   @override
-  State<StatefulWidget> createState() => _TaskListScreen();
+  State<StatefulWidget> createState() => _AbcListScreen();
 }
 
-class _TaskListScreen extends State<TaskListScreen> {
+class _AbcListScreen extends State<AbcListScreen> {
 
   final TextEditingController taskNameController = TextEditingController();
-  final TextEditingController taskContentController = TextEditingController();
+  final List<TextEditingController> textControllerList = List.generate(26, (_) => TextEditingController());
 
   @override
   void initState() {
     if (widget.existingList == null) {
-      _updateName("New TaskList");
+      _updateValue(taskNameController, "New TaskList");
     } else {
       _updateContent(StoreUtils().getContent(widget.existingList!.path));
-      _updateName(StoreUtils.getOnlyFileName(widget.existingList!.path).split(".").first);
+      _updateValue(taskNameController, StoreUtils.getOnlyFileName(widget.existingList!.path).split(".").first);
     }
     super.initState();
   }
@@ -32,48 +33,43 @@ class _TaskListScreen extends State<TaskListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(taskNameController.text),
+        title: TextField(
+          controller: taskNameController,
+        ),
         actions: getActionButtons(),
       ),
-      body: SingleChildScrollView(
-          child: Column(
-            children: [
-              Center(
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width-100,
-                  child: TextField(
-                    controller: taskNameController,
-                    decoration: const InputDecoration(
-                        label: Text("TaskList Name")
+      body: ListView.builder(
+          itemCount: 26,
+          itemBuilder: (BuildContext context, int index){
+            return Card(
+              child: Row(
+                children: [
+                  const Icon(Icons.arrow_forward_ios),
+                  Text("${const AsciiDecoder().convert([65+index])} "),
+                  const Spacer(),
+                  SizedBox(
+                    child: TextField(
+                      controller: textControllerList[index],
                     ),
-                    onChanged: (_) => setState((){}),
-                  ),
-                ),
+                    width: MediaQuery.of(context).size.width-50,
+                  )
+                ],
               ),
-              TextField(
-                decoration: const InputDecoration(
-                    label: Text("Content")
-                ),
-                controller: taskContentController,
-                maxLines: (MediaQuery.of(context).size.width/12).round(),
-              ),
-            ],
-          )
-      ),
-    );
-  }
-
-  _updateName(String value){
-    taskNameController.value = TextEditingValue(
-      text: value,
-      selection: TextSelection.fromPosition(
-        TextPosition(offset: value.length),
+            );
+          }
       ),
     );
   }
 
   _updateContent(String value){
-    taskContentController.value = TextEditingValue(
+    final valueList = value.split("\n");
+    textControllerList.asMap().forEach((index, controller) { 
+      _updateValue(controller, valueList[index]);
+    });
+  }
+
+  _updateValue(TextEditingController tec, String value){
+    tec.value = TextEditingValue(
       text: value,
       selection: TextSelection.fromPosition(
         TextPosition(offset: value.length),
@@ -86,7 +82,7 @@ class _TaskListScreen extends State<TaskListScreen> {
     buttonList.add(IconButton(
         onPressed: () {
           final SnackBar snackBar;
-          if (StoreUtils().createAndSaveFile("${taskNameController.text}.tkl", taskContentController.text)) {
+          if (StoreUtils().createAndSaveFile("${taskNameController.text}.abc", textControllerList.map((e) => "${e.text}\n").join())) {
             snackBar = const SnackBar(
                 content: Text("Successfully created the List!")
             );
@@ -103,7 +99,7 @@ class _TaskListScreen extends State<TaskListScreen> {
     if (widget.existingList != null) {
       buttonList.add(IconButton(
           onPressed: () async {
-            var path = await StoreUtils.getPath() + "/${taskNameController.text}.tkl";
+            var path = await StoreUtils.getPath() + "/${taskNameController.text}.abc";
             final SnackBar snackBar;
             if (!StoreUtils().deleteList(path)) {
               snackBar = const SnackBar(

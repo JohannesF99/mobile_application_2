@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:mobile_application_2/screen/abclist_screen.dart';
 import 'package:mobile_application_2/screen/tasklist_screen.dart';
 import 'package:mobile_application_2/utils/store_utils.dart';
 
@@ -29,8 +30,8 @@ class _HistoryScreen extends State<HistoryScreen> {
               itemBuilder: (BuildContext context, int index) {
                 return Container(
                   child: TextButton(
-                    child: Text(StoreUtils.getOnlyFileName(taskLists[index].path)),
-                    onPressed: () => openTaskList(taskLists[index]),
+                    child: _getFileNameAndType(taskLists[index].path),
+                    onPressed: () => _checkTypeAndOpenList(taskLists[index]),
                   ),
                   height: 50,
                   color: Colors.black,
@@ -46,10 +47,50 @@ class _HistoryScreen extends State<HistoryScreen> {
     );
   }
 
-  openTaskList(File file){
+  _getFileNameAndType(String path){
+    final fileName = StoreUtils.getOnlyFileName(path);
+    final fileNameList = fileName.split(".");
+    final textName = fileNameList.first;
+    final Icon listTypeIcon;
+    switch (fileNameList.last){
+      case "abc": {
+        listTypeIcon = const Icon(Icons.abc);
+      }
+      break;
+      case "tkl": {
+        listTypeIcon = const Icon(Icons.text_snippet);
+      }
+      break;
+      default: {
+        listTypeIcon = const Icon(Icons.question_mark);
+      }
+      break;
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        listTypeIcon,
+        Text(textName)
+      ],
+    );
+  }
+
+  _checkTypeAndOpenList(File file){
+    final StatefulWidget listScreen;
+    switch (file.path.split(".").last) {
+      case "abc": {
+        listScreen = AbcListScreen(existingList: file);
+      }
+      break;
+      case "tkl":
+      default: {
+        listScreen = TaskListScreen(existingList: file);
+      }
+      break;
+    }
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => TaskListScreen(existingList: file,)),
+      MaterialPageRoute(builder: (context) => listScreen),
     );
   }
 }
